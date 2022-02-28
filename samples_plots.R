@@ -3,7 +3,9 @@ library(RColorBrewer)
 source("Mamoeiro.R")
 cities <- c("HEMOAM", "FPS", "HEMOCE", "HEMOBA", "HEMOMINAS", "HEMOPE", "HEMEPAR", "HEMORIO")
 
-fields <- paste0("drho[42, ", 1:10, "]")
+#This script generates plots of seroprevalence trends disaggregated by age and sex. 
+
+fields <- paste0("drho[42, ", 1:10, "]") #drho[1] = week 10, hence drho[42] = week 51
 fieldnames <- c("F_15-24", "F_25-34", "F_35-44", "F_45-54", "F_55-69",
                 "M_15-24", "M_25-34", "M_35-44", "M_45-54", "M_55-69")
 
@@ -120,6 +122,3 @@ ggplot(dfplot, aes(x = cityname, y = q3, fill = age_sex)) +  geom_errorbar(aes(y
   theme(axis.text.x = element_text(angle = 45, hjust=1))
 ggsave(last_plot(), file = "figs/Prevalence_RR2.png", width = 11, height = 3, dpi = 600)
 ggsave(last_plot(), file = "figs/Prevalence_RR2.pdf", width = 11, height = 3, dpi = 600)
-
-
-# --- By sex only --- #

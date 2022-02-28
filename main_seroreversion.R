@@ -8,11 +8,8 @@ library(Hmisc)
 setwd(dirname(getActiveDocumentContext()$path))
 
 source("serorev_functions.R")
-source("IFR_functions.R")
-source("prev_functions.R")
 
-
-BSC_prev_val <- function(center, ppos, suffix = "", Nsamples_val = 100, thr = 0.49, week = FALSE) 
+BSC_prev_val <- function(center, ppos, suffix = "", Nsamples_val = 1000, thr = 0.49, week = FALSE) 
 #This function runs the seroreversion correction model
 {
   print(paste0(center, "_", suffix))
@@ -54,7 +51,10 @@ BSC_prev_val <- function(center, ppos, suffix = "", Nsamples_val = 100, thr = 0.
   all_centres <- all_centres %>% filter(blood_center == center, month <= 15)
   if(week) {
     dates <- seq(as.Date("2020-01-01"), as.Date("2021-04-08"), by = "week")
-    all_centres$month = cut(all_centres$donation_date, dates, label = 1:(length(dates)-1)) %>% as.numeric()
+    all_centres$month <- cut(all_centres$donation_date, dates, label = 1:(length(dates)-1)) %>% as.numeric() #We keep the name month, 
+                                                                                                             #but it now represents the number of weeks 
+                                                                                                             #after January 1st 2020
+    
   }
   
   prev <- all_centres %>% group_by(month, age_sex) %>% summarise(ntests = n(), npos = sum(result >= thr))
@@ -115,22 +115,20 @@ BSC_prev_val <- function(center, ppos, suffix = "", Nsamples_val = 100, thr = 0.
   
 }
 
-# --- #
+# --- Run the model --- #
 
 
-ppos_df <- read.csv("ppos_week.csv")
-Nsamples_val <- 1000
+ppos_df <- read.csv("data/ppos_week.csv")
+Nsamples_val <- 1000 #Number of samples used in the validation analysis
 
 for(center in c("HEMOAM", "FPS", "HEMOCE", "HEMEPAR", "HEMORIO", "HEMOBA", "HEMOPE", "HEMOMINAS")) {
   print(center)
-  ppos <- ppos_df %>% filter(type == "Repeat Donors") %>% arrange(date) %>% .$ppos
+  ppos <- ppos_df %>% filter(type == "Repeat Donors") %>% arrange(date) %>% .$ppos #p+[n] estimated with repeat donors (approach used in the paper)
   BSC_prev_val(center, ppos, paste0(center, "_repeat_week_agesex"), Nsamples_val, 0.49, TRUE)
-}
-
-for(center in c("HEMOAM", "FPS", "HEMOCE", "HEMEPAR", "HEMORIO", "HEMOBA", "HEMOPE", "HEMOMINAS")) {
-  ppos <- ppos_df %>% filter(type == "Repeat Donors (deaths)") %>% arrange(date) %>% .$ppos
+  
+  ppos <- ppos_df %>% filter(type == "Repeat Donors (deaths)") %>% arrange(date) %>% .$ppos #p+[n] estimated with repeat donors with incidence estimated using deaths 
   BSC_prev_val(center, ppos, paste0(center, "_deaths_week_agesex"), Nsamples_val, 0.49, TRUE)
   
-  ppos <- ppos_df %>% filter(type == "Plasma Donors") %>% arrange(date) %>% .$ppos
+  ppos <- ppos_df %>% filter(type == "Plasma Donors") %>% arrange(date) %>% .$ppos          #p+[n] estimated with plasma donors
   BSC_prev_val(center, ppos, paste0(center, "_plasma_week_agesex"), Nsamples_val, 0.49, TRUE)
 }

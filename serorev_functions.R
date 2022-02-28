@@ -1,4 +1,3 @@
-## load the nimble library and set seed
 library('nimble')
 library('nimbleSMC')
 library(tidyverse)
@@ -6,7 +5,7 @@ library(lubridate)
 library(readxl)
 library(survey)
 
-modelCode.BSC <- function()
+modelCode.BSC <- function()  #Seroreversion correction model
 {
  
   code <- nimbleCode({
@@ -38,7 +37,7 @@ modelCode.BSC <- function()
   return(code)
 }
 
-
+#Estimates seroprevalence in blood donors
 prevalence.blood_donors <- function(prev, ppos, population, cases_max = 1, cases_prior = NA,
                                     nburnin = 10000, niter = 100000, alpha = NA)
 {
@@ -121,7 +120,7 @@ prevalence.blood_donors <- function(prev, ppos, population, cases_max = 1, cases
 
 }
 
-
+#Estimates seroprevalence in blood donors assuming homogeneity (same seroprevalence) among age groups
 prevalence.blood_donors.hom <- function(prev, ppos, population, nburnin = 10000, niter = 100000, alpha = NA, cases_max = 1)
 {
   prev_hom <- prev %>% group_by(month) %>% summarise(ntests = sum(ntests), npos = sum(npos), age_sex = "MF_0-100")  #Homogeneous prevalence
@@ -232,6 +231,7 @@ normalize.drho <- function(drho)
   return(list(rho_max = rho_max, drhon = drhon))
 }
 
+#Simulates number of positives using posterior samples drho.
 simulate.epidemic <- function(prev, drho, ppos, cases_max = 1)
 {
   npos.plasma <- 189
@@ -261,7 +261,6 @@ simulate.epidemic <- function(prev, drho, ppos, cases_max = 1)
     ntests = as.matrix(ntests),
     ncompartments = ncompartments,
     A = A,
-    #alpha.pneg = c(0, diff(ppos)),
     alpha = rep(1, nmonths),
     rho_max.lb = 0,
     rho_max.ub = cases_max,
@@ -314,79 +313,4 @@ summarise.samples <- function(samples)
     rename(month = Var1, age_sex = Var2)
 
   return(dfout)
-}
-
-prevalence.blood_donors.measured <- function(prev, population, cases_prior = NA,
-                                      nburnin = 10000, niter = 100000)
-{
-  npos.plasma <- 189
-  nneg.plasma <- 19
-  npos.prepandemic <- 20
-  nneg.prepandemic <- 801
-  
-  ntests = prev.to.matrix(prev, "ntests")
-  npos = prev.to.matrix(prev, "npos")
-  
-  nmonths = nrow(npos)
-  ncompartments = ncol(npos)
-  
-  if(any(is.na(cases_prior)))
-  {
-    cases_prior <- rep(1, nmonths)
-  }
-  else {
-    for(i in 1:length(cases_prior))
-    {
-      cases_prior[i] <- min(1, cases_prior[i])
-    }
-  }
-  
-  
-  modelCode <- nimbleCode({
-    se ~ dbeta(1+npos.plasma, 1+nneg.plasma)
-    spb ~ dbeta(1+npos.prepandemic, 1+nneg.prepandemic) #spb = 1 - specificity
-    
-    for(n in 1:nmonths) {
-      for(m in 1:ncompartments) {
-        rho[n,m] ~ dunif(0,cases_prior[n])
-        mu[n,m] <- se*rho[n,m] + spb*(1 - rho[n,m])
-        npos[n,m] ~ dbinom(size = ntests[n,m], prob = mu[n,m])
-      }
-    }
-  })
-  
-  constants <- list(
-    nmonths = nmonths,
-    ntests = as.matrix(ntests),
-    ncompartments = ncompartments,
-    npos.plasma = npos.plasma,
-    nneg.plasma = nneg.plasma,
-    npos.prepandemic = npos.prepandemic,
-    nneg.prepandemic = nneg.prepandemic,
-    cases_prior = cases_prior
-  )
-  
-  data <- list(npos = as.matrix(npos))
-  inits <- list(rho = as.matrix(npos)/as.matrix(ntests),
-                se = 0.9,
-                spb = 0.01
-  )
-  
-  
-  nimbleMCMC_samples <- nimbleMCMC(code = modelCode, 
-                                   constants = constants, 
-                                   data = data, 
-                                   inits = inits,
-                                   nburnin = nburnin, niter = niter, monitors = c("rho", "se", "spb"))
-  
-  prev_est <- matrix(data = 0, nrow = nrow(nimbleMCMC_samples), ncol = nmonths)
-  drho_est <- matrix(data = 0, nrow = nrow(nimbleMCMC_samples), ncol = nmonths)
-  
-  rho_samples <- list()
-  for(m in 1:ncompartments) {
-    rho_samples[[m]] = nimbleMCMC_samples[, sapply(1:nmonths, function(x) sprintf(paste0("rho[%d, ", m, "]"), x))]
-    prev_est <- prev_est + population[m]*rho_samples[[m]]/sum(population)
-  }
-
-  return(list(prev_est = prev_est, rho = rho_samples))
 }

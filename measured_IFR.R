@@ -3,9 +3,6 @@ library(Hmisc)
 library(rstudioapi)
 setwd(dirname(getActiveDocumentContext()$path))
 
-source("serorev_functions.R")
-source("IFR_functions.R")
-
 #This script validates the attack rates and IFRs obtained by our seroreversion correction model
 #by estimating these quantities using a threshold of 0.1 and correcting for sensitivity and
 #specificity
@@ -48,8 +45,8 @@ pop <- pop %>% group_by(code, new_bin, CS_SEXO) %>% summarise(population = sum(p
   ungroup() %>% rename(age_bin = new_bin) %>% mutate(age_sex = paste0(CS_SEXO, "_", age_bin)) %>% arrange(age_sex)
 
 #SARI data
-srag <- read.csv("D:/Downloads/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
 srag21 <- srag21[, colnames(srag)]
 srag <- rbind(srag, srag21)
 

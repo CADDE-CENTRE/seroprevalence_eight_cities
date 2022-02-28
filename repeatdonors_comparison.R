@@ -108,7 +108,7 @@ plot_grid(g12, g22, g11, g21, NULL, g23, ncol = 2)
 
 # --- Line plots --- #
 
-df <- read.csv("data/recurrent_donors_hemoam_2021-09-23.csv", sep = ";")
+df <- read.csv("data/repeat_blood_donors.csv")
 df$donation_date <- as.Date(paste0(df$donyr, "-", df$donmo, "-", df$donda))
 df <- df %>% filter(covid_result != "", assay != "COV-2IgGII")
 df$result <- as.numeric(sapply(str_split(df$covid_result, pattern = " "), function(x) x[1]))
@@ -155,7 +155,7 @@ plot_grid(g32, g12, g22, g31, g11, g21, NULL, NULL, g23, ncol = 3)
 ggsave(last_plot(), file = "figs/repeat_comparison_may.pdf", width = 15, height = 10)
 
 
-dfplot <- read.csv("pneg_week.csv")
+dfplot <- read.csv("data/pneg_week.csv")
 dfplot <- dfplot %>% group_by(type) %>% mutate(pneg = pneg/sum(pneg))
 Ns <- 1E5
 dfplot <- dfplot %>% group_by(type) %>% 

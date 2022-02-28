@@ -1,4 +1,6 @@
 library(tidyverse)
+library(zoo)
+source("Mamoeiro.R")
 
 dates <- as.Date(c("2020-04-15", "2020-05-15", "2020-06-15", "2020-07-15", "2020-08-15", "2020-09-15", 
                    "2020-10-15", "2020-11-15", "2020-12-15"))
@@ -12,9 +14,9 @@ pop <- pop %>% mutate(new_bin = agemap[age_bin])
 pop <- pop %>% group_by(code, new_bin, CS_SEXO) %>% summarise(population = sum(population)) %>% 
   ungroup() %>% rename(age_bin = new_bin) %>% mutate(age_sex = paste0(CS_SEXO, "_", age_bin)) %>% arrange(age_sex)
 
-
-srag <- read.csv("D:/Downloads/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+# --- Load SIVEP-Gripe --- #
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
 srag21 <- srag21[, colnames(srag)]
 srag <- rbind(srag, srag21)
 
@@ -45,27 +47,18 @@ srag <- srag %>% left_join(popall, by = "age_sex")
 srag <- srag %>% left_join(popcity %>% rename(CO_MUN_RES = code), by = "CO_MUN_RES")
 
 pop_total = popall$population_all %>% sum()
+
+# --- Age-Standardised Number of Deaths --- #
 sragn <- srag %>% group_by(CO_MUN_RES, DT_SIN_PRI) %>% summarise(SMR = sum(SMR*population_all/pop_total), ID_MN_RESI = ID_MN_RESI[1],
                                                                  MR = sum(deaths)/popcity[1])
 
-library(zoo)
 sragn <- sragn %>% group_by(CO_MUN_RES) %>% arrange(DT_SIN_PRI) %>% mutate(SMR_mean = rollmean(SMR, 7, fill = 0, align = "center"), 
                                                                            SMR_cum = cumsum(SMR_mean),
                                                                            MR_mean = rollmean(MR, 7, fill = 0, align = "center"), 
                                                                            MR_cum = cumsum(MR_mean))
 
 
-
-ggplot(sragn %>% filter(DT_SIN_PRI <= as.Date("2021-03-31")), aes(x = DT_SIN_PRI, y = 1E6*SMR, colour = ID_MN_RESI)) + facet_wrap(~ID_MN_RESI, nrow = 2, ncol = 4) + 
-geom_point(alpha = 0.25, size = 1) + geom_line(aes(y = 1E6*SMR_mean)) + theme_bw() + 
-  labs(x = "Date of symptoms onset", y = "Age-sex adjusted daily mortality per million inhabitants") +
-theme(legend.position = "none") + scale_x_continuous(breaks = seq(as.Date("2020-01-01"), as.Date("2021-03-01"), by = "month"), 
-                                                     labels = c("Jan", "Fev", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", 
-                                                                "Jan", "Fev", "Mar")) +
-  ylim(c(0, 90)) + geom_line(aes(x = DT_SIN_PRI, y = 3E4*SMR_cum), linetype = 2) + 
-  scale_y_continuous("Age-sex adjusted mortality per million inhabitants", 
-                     sec.axis = sec_axis(~ . * 100/3, name = "Cumulative age-sex adjusted mortality per million inhabitants"))
-
+# --- Generate plots --- #
 ggplot(sragn %>% filter(DT_SIN_PRI <= as.Date("2021-03-31")), aes(x = DT_SIN_PRI, y = 1E6*SMR, colour = ID_MN_RESI)) + facet_wrap(~ID_MN_RESI, nrow = 2, ncol = 4) + 
   geom_point(alpha = 0.25, size = 1) + geom_line(aes(y = 1E6*SMR_mean)) + theme_bw() + 
   labs(x = "Date of symptoms onset", y = "Age-sex adjusted daily mortality per million inhabitants") +
@@ -73,13 +66,9 @@ ggplot(sragn %>% filter(DT_SIN_PRI <= as.Date("2021-03-31")), aes(x = DT_SIN_PRI
                                                        labels = c("Jan", "Fev", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", 
                                                                   "Jan", "Fev", "Mar")) +
   ylim(c(0, 90)) + geom_line(aes(x = DT_SIN_PRI, y = 1E6*MR_mean), linetype = 2)
-  #scale_y_continuous("Age-sex adjusted mortality per million inhabitants", 
-  #                   sec.axis = sec_axis(~ . * 100/3, name = "Cumulative age-sex adjusted mortality per million inhabitants"))
-
-#ggsave(last_plot(), file = "figs/SMR.png", width = 15, height = 5)
+ggsave(last_plot(), file = "figs/age-standardised_MR.png", width= 15, height = 10)
 
 
-source("Mamoeiro.R")
 citymap <- c("BELO HORIZONTE" = "Belo Horizonte", "CURITIBA" = "Curitiba", "FORTALEZA" = "Fortaleza", "MANAUS" = "Manaus", "RECIFE" = "Recife",
              "RIO DE JANEIRO" = "Rio de Janeiro", "SALVADOR" = "Salvador", "SAO PAULO" = "São Paulo")
 sragn <- sragn %>% mutate(city = citymap[ID_MN_RESI])

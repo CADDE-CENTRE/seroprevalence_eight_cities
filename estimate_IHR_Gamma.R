@@ -1,11 +1,12 @@
 library(tidyverse)
-library(Hmisc)
 library(rstudioapi)
 setwd(dirname(getActiveDocumentContext()$path))
+
+#This script generates bounds for the attack rate and IHR of the Gamma epidemic in Manaus
+
 cities <- c("HEMOAM")
 codes <- c("HEMOAM" = 130260, "FPS" = 355030, "HEMOCE" = 230440, "HEMOBA" = 292740, 
            "HEMOMINAS" = 310620, "HEMOPE" = 261160, "HEMEPAR" = 410690, "HEMORIO" = 330455)
-
 
 
 fields <- paste0("drho[54, ", 1:10, "]")
@@ -50,8 +51,8 @@ pop <- pop %>% group_by(code, new_bin, CS_SEXO) %>% summarise(population = sum(p
   ungroup() %>% rename(age_bin = new_bin) %>% mutate(age_sex = paste0(CS_SEXO, "_", age_bin)) %>% arrange(age_sex)
 
 
-srag <- read.csv("D:/Downloads/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
 srag21 <- srag21[, colnames(srag)]
 srag <- rbind(srag, srag21)
 

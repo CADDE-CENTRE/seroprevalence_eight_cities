@@ -1,10 +1,12 @@
 library(tidyverse)
+library(RColorBrewer)
+library(lubridate)
 source("Mamoeiro.R")
 
 codes <- c("HEMOAM" = 130260, "FPS" = 355030, "HEMOCE" = 230440, "HEMOBA" = 292740, 
            "HEMOMINAS" = 310620, "HEMOPE" = 261160, "HEMEPAR" = 410690, "HEMORIO" = 330455)
 
-
+# --- Clean blood donors and population data --- #
 df <- readRDS("data/Bloodbank.rds")
 
 pop <- readRDS("data/population2020.rds")
@@ -48,6 +50,7 @@ dfplot <- df %>% group_by(blood_center, month) %>% summarise(npos.all = sum(npos
                                                              q4.corr = NA,
                                                              q5.corr = NA)
 
+# --- Corrects seroprevalence by sensitivitiy and specificity --- #
 
 Nsamples <- 1E5
 se <- rbeta(Nsamples, 1 + 189, 1 + 19)
@@ -94,7 +97,6 @@ ggsave(last_plot(), file = "figs/measured_prevalence_month.pdf", width = 10, hei
 
 
 df <- df %>% mutate(city = citynames[blood_center])
-library(RColorBrewer)
 palM <- colorRampPalette(brewer.pal(5, "Blues"))
 palF <- colorRampPalette(brewer.pal(5, "Reds"))
 
@@ -192,7 +194,6 @@ adj <- adj %>% group_by(center, month, age_sex) %>% summarise(q1 = value[quantil
 adj <- adj %>% rename(blood_center = center) %>% mutate(city = citynames[blood_center], type = "Seroreversion",
                                                         dt = as.Date("2020-01-15") + 7*(month - 1))
 
-library(lubridate)
 dfplot.agesex <- dfplot.agesex %>% mutate(dt = as.Date("2020-01-15") %m+% months((month - 1)))
 dfplot.agesex.serorev <- rbind(dfplot.agesex, adj)
 
@@ -217,7 +218,7 @@ ggplot(dfplot.agesex.serorev %>% filter(type != "Adjusted (correted for seroreve
 ggsave(last_plot(), file = "figs/seroprevalence_all_agesex_mes.png", width = 10, height = 20)
 ggsave(last_plot(), file = "figs/seroprevalence_all_agesex_mes.pdf", width = 10, height = 20)
 
-# --- Seroprevalence disaggregated by age --- #
+# --- Seroprevalence disaggregated only by age --- #
 
 
 dfplot.age.all <- df %>% group_by(blood_center, age_group) %>% summarise(npos.all = sum(npos), ntests.all = sum(ntests), 
@@ -282,7 +283,7 @@ ggplot(dfplot.age %>% filter(type == "Crude"), aes(x = month, y = 100*q3, fill =
   labs(x = "Month", y = "Seroprevalence (%)")
 ggsave(last_plot(), file = "figs/crude_seroprevalence_age.pdf", width = 15, height = 10)
 
-# --- Seroprevalence disaggregated by sex --- #
+# --- Seroprevalence disaggregated only by sex --- #
 
 
 

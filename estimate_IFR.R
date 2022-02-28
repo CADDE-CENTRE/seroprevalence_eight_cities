@@ -47,12 +47,11 @@ agemap <- c("15-20" = "15-24", "20-25" = "15-24", "25-30" = "25-34", "30-35" = "
 pop <- pop %>% mutate(new_bin = agemap[age_bin])
 pop <- pop %>% group_by(code, new_bin, CS_SEXO) %>% summarise(population = sum(population)) %>% 
   ungroup() %>% rename(age_bin = new_bin) %>% mutate(age_sex = paste0(CS_SEXO, "_", age_bin)) %>% arrange(age_sex)
-#pop$age_sex[pop$age_sex == "F_55-69"] <- "F_55-64"
-#pop$age_sex[pop$age_sex == "M_55-69"] <- "M_55-64"
 
 
-srag <- read.csv("D:/Downloads/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
 srag21 <- srag21[, colnames(srag)]
 srag <- rbind(srag, srag21)
 
@@ -70,10 +69,6 @@ deaths <- srag %>% filter(DT_SIN_PRI <= as.Date("2020-12-16")) %>% group_by(age_
 
 dfplot <- dfplot %>% left_join(deaths, by = c("age_sex", "CO_MUN_RES"))
 dfplot <- dfplot %>% left_join(pop %>% rename(CO_MUN_RES = code), by = c("CO_MUN_RES", "age_sex"))
-
-#dfplot <- dfplot %>% group_by(city, age_bin) %>% 
-#  summarise(ninf = (value[CS_SEXO == "F"]*population[CS_SEXO == "F"] + value[CS_SEXO == "M"]*population[CS_SEXO == "M"]),
-#            n = n[CS_SEXO == "F"] + n[CS_SEXO == "M"])
 
 dfplot.global <- dfplot %>% group_by(city, sampleid) %>% summarise(ninf = sum(value*population), n = sum(n))
 dfplot.global.age <- dfplot %>% group_by(age_bin, sampleid) %>% summarise(ninf = sum(value*population), n = sum(n))
@@ -107,16 +102,6 @@ dfplot.global.all <- dfplot.global.all %>% group_by(city) %>% dplyr::summarise(I
                                                                                IFR.q4 = quantile(IFR, 0.75),
                                                                                IFR.q5 = quantile(IFR, 0.975))
 
-
-# ninftotal <- dfplot %>% filter(sampleid == 1) %>% .$ninf %>% sum()
-# dfplot.global.all2 <- dfplot %>% left_join(pop %>% mutate(city = icodes[as.character(code)]))
-# dfplot.global.all2 <- dfplot.global.all2 %>% group_by(age_bin, sampleid) %>% mutate(ninfall = sum(ninf))
-# dfplot.global.all2 <- dfplot.global.all2 %>% group_by(city, sampleid) %>% summarise(IFR = sum(IFR*ninfall)/ninftotal)
-# dfplot.global.all2 <- dfplot.global.all2 %>% group_by(city) %>% dplyr::summarise(IFR.q1 = quantile(IFR, 0.025),
-#                                                                                  IFR.q2 = quantile(IFR, 0.25),
-#                                                                                  IFR.q3 = quantile(IFR, 0.5),
-#                                                                                  IFR.q4 = quantile(IFR, 0.75),
-#                                                                                  IFR.q5 = quantile(IFR, 0.975))
 
 
 saveRDS(dfplot, "IFR2020_samples.rds")

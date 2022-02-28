@@ -1,14 +1,13 @@
 library(tidyverse)
-library(Hmisc)
 library(rstudioapi)
 setwd(dirname(getActiveDocumentContext()$path))
+
+#This script generates bounds for the attack rate and IFR of the Gamma epidemic in Manaus
 cities <- c("HEMOAM")
 codes <- c("HEMOAM" = 130260, "FPS" = 355030, "HEMOCE" = 230440, "HEMOBA" = 292740, 
            "HEMOMINAS" = 310620, "HEMOPE" = 261160, "HEMEPAR" = 410690, "HEMORIO" = 330455)
 
-
-
-fields <- paste0("drho[54, ", 1:10, "]")
+fields <- paste0("drho[54, ", 1:10, "]") #drho[1] = week 10, hence drho[54] = week 63
 
 fieldnames <- c("F_15-24", "F_25-34", "F_35-44", "F_45-54", "F_55-69",
                 "M_15-24", "M_25-34", "M_35-44", "M_45-54", "M_55-69")
@@ -19,7 +18,7 @@ for(city in cities) {
   dff_inc <- readRDS(paste0("outputs/samples_", city, "_repeat_week_agesex.rds"))
   dff <- 0*dff_inc
   for(i in 1:10) {
-    dff[, paste0("drho[", 42, ", ", i, "]")] <- dff_inc[, paste0("drho[", 1, ", ", i, "]")]
+    dff[, paste0("drho[", 42, ", ", i, "]")] <- dff_inc[, paste0("drho[", 1, ", ", i, "]")] #drho[1] = week 10, hence drho[42] = week 51
     for(j in 43:54) {
       dff[, paste0("drho[", j, ", ", i, "]")] <- dff[, paste0("drho[", j - 1, ", ", i, "]")] + dff_inc[, paste0("drho[", j, ", ", i, "]")]
     }
@@ -52,8 +51,8 @@ pop <- pop %>% group_by(code, new_bin, CS_SEXO) %>% summarise(population = sum(p
 #pop$age_sex[pop$age_sex == "M_55-69"] <- "M_55-64"
 
 
-srag <- read.csv("D:/Downloads/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", stringsAsFactors = F, sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", stringsAsFactors = F, sep = ";")
 srag21 <- srag21[, colnames(srag)]
 srag <- rbind(srag, srag21)
 

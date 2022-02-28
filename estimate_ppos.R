@@ -8,7 +8,7 @@ source("repeat_functions.R")
 #This script estimates p+[n] from repeat blood donors and convalescent plasma donors data
 
 df <- read.csv("data/repeat_blood_donors.csv")
-df <- df %>% filter(covid_result != "", donproc == "WB", assay != "COV-2IgGII")
+df <- df %>% filter(covid_result != "", assay != "COV-2IgGII")
 df$donation_date <- as.Date(paste0(df$donyr, "-", df$donmo, "-", df$donda))
 df$result <- as.numeric(sapply(str_split(df$covid_result, pattern = " "), function(x) x[1]))
 
@@ -54,8 +54,8 @@ for(i in 1:nrow(donors))
 ptinf <- ptinf/nrow(donors.all)
 ptinf <- rollmean(ptinf, 30, align = "center")
 
-srag <- read.csv("D:/Downloads/INFLUD-13-09-2021.csv", sep = ";")
-srag21 <- read.csv("D:/Downloads/INFLUD21-13-09-2021.csv", sep = ";")
+srag <- read.csv("data/INFLUD20-14-02-2022.csv", sep = ";")
+srag21 <- read.csv("data/INFLUD21-14-02-2022.csv", sep = ";")
 srag <- rbind(srag, srag21[, colnames(srag)])
 rm(srag21)
 
@@ -155,7 +155,7 @@ ggplot(dfplot, aes(x = date, y = ppos, color = type)) + geom_line(size = 1) + ge
   scale_x_continuous(breaks=seq(0, 720, 30)) + theme(legend.position = "top", legend.box = "horizontal", legend.direction = "vertical")
 ggsave(last_plot(), file = "figs/ppos_week.png", width = 10, height = 8)
 ggsave(last_plot(), file = "figs/ppos_week.pdf", width = 10, height = 8)
-write.csv(dfplot, "ppos_week.csv")
+write.csv(dfplot, "data/ppos_week.csv")
 
 
 dfplot <- rbind(data.frame(date = seq(0, 720, 7), pneg = c(0, -diff(ppos_rep[1:103])), type = "Repeat Donors"),
@@ -168,5 +168,5 @@ ggplot(dfplot, aes(x = date, y = pneg, color = type)) + geom_line(size = 1) + ge
 ggsave(last_plot(), file = "figs/pneg_week.png", width = 10, height = 8)
 ggsave(last_plot(), file = "figs/pneg_week.pdf", width = 10, height = 8)
 
-write.csv(dfplot, "pneg_week.csv")
+write.csv(dfplot, "data/pneg_week.csv")
 
