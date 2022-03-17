@@ -11,4 +11,3 @@ Each line of this file represents a donation. The columns are:
 - donation_date: Date of sample collection
 - month: Number of months passed since January 1st 2020. For instance, samples collected in March 2020 and March 2021 have respectively month = 3 and month = 15.
 - result: Signal-to-cutoff obtained with the anti-N assay. A test is considered positive if result > threshold. In the paper, we use threshold = 0.49.
-- interpretation: 
